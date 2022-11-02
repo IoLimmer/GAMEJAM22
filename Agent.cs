@@ -1,108 +1,133 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.AI;
 
 public class Agent : MonoBehaviour
 {
-    public Transform player;
-    public LayerMask whatIsGround, whatIsPlayer;
-    public Rigidbody rbody;
-    public Vector3 agentPos;
-    public float step;
+    public GameObject player;
+    public float speed = 5f;
+    public float detectionRange = 10f;
+    public float attackZone = 2f;
+    private bool playerInRange = false;
+    private bool playerInAttackZone = false;
+    public float gravity = -18f;
+    public Vector3 randMove;
+    public float timer = 0f;
+    public float timeTemp = 0f;
+    public float temp, playerDist;
+   // public delegate void enemyKilled();
+    //public static event enemyKilled OnEnemyKilled;
 
 
-    public Vector3 WP;
-    bool walkPointSet;
-    public float walkPointRange = 10f;
+    public float health = 20f;
 
-    public float sightRange = 100000f, attackRange = 0f;
-    public bool playerInSightRange, playerInAttackRange;
 
-    private void Awake()
-    {
-        player = GameObject.Find("FPP").transform;
-        agentPos = transform.position;
-        rbody = GetComponent<Rigidbody>();
-        step = 100 * Time.deltaTime;
-    }
 
-    private void FindWP()
-    {
-        float randomZ = Random.Range(-walkPointRange, walkPointRange);
-        float randomX = Random.Range(-walkPointRange, walkPointRange);
-        WP = new Vector3(transform.position.x + randomX, transform.position.z + randomZ);
-        if(Physics.Raycast(WP, -transform.up, 2f, whatIsGround))
-        {
-            walkPointSet = true;
-        }
-    }
 
-    private void patrol()
-    {
-        if (!walkPointSet)
-        {
-            FindWP();
-        }
-
-        if (walkPointSet){
-            transform.position = Vector3.MoveTowards(transform.position, WP, step);
-        }
-        Vector3 distanceToWP = transform.position - WP;
-
-        if(distanceToWP.magnitude < 1f)
-        {
-            walkPointSet = false;
-        }
-    }
-
-    private void Chase()
-    {
-
-      transform.position = Vector3.MoveTowards(transform.position, player.position, step);
-    }
-
-    private void attack()
-    {
-        //enemy stop moving
-        transform.position = Vector3.MoveTowards(transform.position, WP, step);
-
-        //Attack code here
-        randBug();
-        Destroy(this);
-    }
-
-    public void randBug()
-    {
-        Debug.Log(Random.Range(1, 6));
-    }
-
-    // Start is called before the first frame update
     void Start()
     {
-        Awake();
+        timer = Time.deltaTime;
+        player = FindObjectOfType<player>().gameObject;
     }
+
+    public void takeDamage(float amount)
+    {
+        health -= amount;
+        if (health <= 0f)
+        {
+            Cease();
+        }
+    }
+
+    void Cease()
+    {
+        Destroy(gameObject);
+    }
+
+    void CheckRange()
+    {
+        //playerDist = Vector3.Distance(transform.position, player.transform.position);
+        playerDist = Vector3.Distance(transform.position, player.transform.position);
+
+        if (playerDist < attackZone)
+        {
+            playerInAttackZone = true;
+            playerInRange = true;
+        }
+        else if (playerDist < detectionRange)
+        {
+            playerInAttackZone = false;
+            playerInRange = true;
+        }
+        else
+        {
+            playerInAttackZone = false;
+            playerInRange = false;
+        }
+        
+        //if (!playerInRange) {
+        //    //Debug.Log("Reach rand");
+        //    randMove.x = transform.position.x + UnityEngine.Random.Range(-50, 50);
+        //    randMove.z = transform.position.z + UnityEngine.Random.Range(-50, 50);
+        //    //Debug.Log(transform.position);
+        //}
+    }
+
+    void ChasePlayer()
+    {
+        transform.position = Vector3.MoveTowards(transform.position, player.transform.position, speed * Time.deltaTime);
+        //transform.rotation = Vector3.RotateTowards(transform.position, player.transform.position, speed * Time.deltaTime, 0.0f);
+
+        Vector3 newDirection = Vector3.RotateTowards(transform.position, player.transform.position, speed * Time.deltaTime, 0.0f);
+
+        transform.rotation = Quaternion.LookRotation(newDirection);
+        //temp = Vector3.Distance(transform.position, player.transform.position);
+        //if (temp < 2f)
+        //{
+        //    playerInAttackZone = true;
+        //}
+    }
+    //void OnTriggerEnter(Collider targetObj)
+    //{
+    //    if (targetObj.gameObject.tag == "Player" || transform.position == player.transform.position)
+    //    {
+    //        Destroy(this.gameObject);
+    //    }
+    //}
 
     // Update is called once per frame
     void Update()
     {
-        step = 100 * Time.deltaTime;
-        agentPos = transform.position;
-        playerInSightRange = Physics.CheckSphere(transform.position, sightRange, whatIsPlayer);
-        playerInAttackRange = Physics.CheckSphere(transform.position, attackRange, whatIsPlayer);
+        timer += Time.deltaTime;
 
-        if(!playerInSightRange && !playerInAttackRange) 
+        CheckRange();
+        
+        if (timer - temp > 5)
         {
-            patrol();
-         }
-        if(playerInSightRange && !playerInAttackRange)
-        {
-            Chase();
+            if (!playerInRange)
+            {
+                //Debug.Log("Reach rand");
+                randMove.x = transform.position.x + UnityEngine.Random.Range(-50, 50);
+                randMove.z = transform.position.z + UnityEngine.Random.Range(-50, 50);
+                //Debug.Log(transform.position);
+            }
+            temp = timer;
         }
-        if(playerInAttackRange && playerInSightRange)
+        if (playerInRange && !playerInAttackZone)
         {
-            attack();
+            ChasePlayer();
         }
-
+        else if (playerInRange && playerInAttackZone)
+        {
+            //bug it
+            
+            Destroy(this.gameObject);
+        }
+        else
+        {
+            transform.position = Vector3.MoveTowards(transform.position, randMove, speed * Time.deltaTime);
+        }
+        
     }
 }

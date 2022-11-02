@@ -17,6 +17,7 @@ public class target : MonoBehaviour
 
     void Cease()
     {
+
         Destroy(gameObject);
     }
 }

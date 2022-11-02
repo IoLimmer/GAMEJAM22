@@ -1,0 +1,65 @@
+//using System.Collections;
+//using System.Collections.Generic;
+//using UnityEngine;
+
+//public class enemyMovement : MonoBehaviour
+//{
+//    public Rigidbody rbody;
+//    public float speed = 12f;
+//    private Vector3 change;
+
+//    // Start is called before the first frame update
+//    void Start()
+//    {
+//        rbody = GetComponent<Rigidbody>();
+//    }
+
+//    // Update is called once per frame
+//    void FixedUpdate()
+//    {
+//        change.x = Input.GetAxis("Horizontal");
+//        change.z = Input.GetAxis("Vertical");
+
+//        change = change * Time.deltaTime * speed;
+
+//        rbody.MovePosition(transform.position + change);
+
+//    }
+//}
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+[RequireComponent(typeof(Rigidbody))]
+public class enemyMovement : MonoBehaviour
+{
+    public float _speed = 1f;
+
+    private Rigidbody _rigidbody;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        _rigidbody = GetComponent<Rigidbody>();
+    }
+
+    // Update is called once per frame
+    void FixedUpdate()
+    {
+        float multiplier = 1f;
+        if (Input.GetKey(KeyCode.LeftShift))
+            multiplier = 2f;
+
+        if (_rigidbody.velocity.magnitude < _speed * multiplier)
+        {
+
+            float value = Input.GetAxis("Vertical");
+            if (value != 0)
+                _rigidbody.AddForce(0, 0, value * Time.fixedDeltaTime * 1000f);
+            value = Input.GetAxis("Horizontal");
+            if (value != 0)
+                _rigidbody.AddForce(value * Time.fixedDeltaTime * 1000f, 0f, 0f);
+        }
+    }
+}
